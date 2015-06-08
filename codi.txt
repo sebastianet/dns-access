@@ -1,0 +1,72 @@
+
+function ReverseDNSLookup( const IPAddress: String;
+                           const DNSServer: String;
+                           Timeout, Retries: Integer;
+                           var HostName: String): Boolean;
+var
+  AIdDNSResolver: TIdDNSResolver;
+  RetryCount: Integer;
+  iResultCount, iLng : integer ;
+
+begin
+  Result := FALSE;
+
+  AIdDNSResolver := TIdDNSResolver.Create(nil);
+
+  try
+
+    AIdDNSResolver.QueryResult.Clear;
+    AIdDNSResolver.WaitingTime := Timeout;
+    AIdDNSResolver.QueryType := [qtPTR];
+    AIdDNSResolver.Host := DNSServer;
+
+    RetryCount := Retries;
+
+    repeat
+
+      try
+
+        dec( RetryCount );
+
+        debugMsg ( '+++ call Resolver, IP ('+IPAddress+'), try ('+ IntToStr(RetryCount)+').' ) ;
+        AIdDNSResolver.Resolve( IPAddress );
+
+        Break;
+
+      except
+
+        on e: Exception do
+        begin
+
+          debugMsg ( '+++ Exception.' ) ;
+
+          if RetryCount <= 0 then
+          begin
+
+ //           if SameText(e.Message, RSCodeQueryName) then
+              Result := FALSE ;
+ //           else
+ //             raise Exception.Create(e.Message);
+
+            Break;
+          end;
+        end;
+      end;
+    until FALSE;
+
+    iResultCount := AIdDNSResolver.QueryResult.Count ;
+    debugMsg ( '+++ have ('+IntToStr(iResultCount)+') result(s).' ) ;
+    Result := AIdDNSResolver.QueryResult.Count > 0;
+
+    if Result then
+    begin
+      Result := TRUE;
+//      HostName := ParseReverseDNSResult( AIdDNSResolver.QueryResult[0].RData ) ;
+      iLng := AIdDNSResolver.QueryResult[0].RDataLength ;
+      debugMsg ( '+++ Result is of length ('+IntToStr(iLng)+').' ) ;
+
+    end;
+  finally
+    FreeAndNil( AIdDNSResolver );
+  end;
+end; // ReverseDNSLookup

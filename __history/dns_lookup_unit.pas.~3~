@@ -1,0 +1,176 @@
+unit dns_lookup_unit;
+
+//  c:\Sebas\delphi\Ping_Continu>nslookup 91.126.241.136
+//  Server:  UnKnown
+//  Address:  192.168.1.1
+//
+//  Name:    cli-5b7ef188.bcn.adamo.es
+//  Address:  91.126.241.136
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, IdBaseComponent, IdComponent,
+  IdTCPConnection, IdDNSResolver, Vcl.StdCtrls;
+
+const
+    kszIP    = '91.126.241.136' ;
+    kTimeout = 3000 ;
+
+type
+  TfDNS = class(TForm)
+
+    IdDNSResolver: TIdDNSResolver;
+    btnDNS: TButton;
+    edHN: TEdit;
+    edIP: TEdit;
+    lbEV: TListBox;
+    procedure MyInit(Sender: TObject);
+
+    procedure btnDNSClick(Sender: TObject);
+    procedure DNSResolverDisconnected(Sender: TObject);
+    procedure DNSResolverStatus(ASender: TObject; const AStatus: TIdStatus;
+      const AStatusText: string);
+    procedure DNSOnWork(ASender: TObject; AWorkMode: TWorkMode;
+      AWorkCount: Int64);
+    procedure DNSOnWorkEnd(ASender: TObject; AWorkMode: TWorkMode);
+    procedure DNSOnWorkBegin(ASender: TObject; AWorkMode: TWorkMode;
+      AWorkCountMax: Int64);
+
+  private
+    { Private declarations }
+
+  public
+    { Public declarations }
+  end;
+
+var
+  fDNS: TfDNS;
+  AIdDNSResolver: TIdDNSResolver;
+
+implementation
+
+{$R *.dfm}
+
+procedure debugMsg ( s:string ) ;
+const
+  kMaxNumofItems = 100 ;
+  kNumItemstoDelete = 25 ;
+var
+  i : integer ;
+
+begin
+
+//  if not bLB_Trassa_Enabled then Exit ;
+
+  with fDNS.lbEV do begin
+
+    Items.add ( dateTimeToStr ( now ) + ' ' + s ) ;
+      ItemIndex := Count - 1 ; // focus on last item
+      ItemIndex := -1 ; // no focus
+
+// delete if too many elements :
+    if Items.Count > kMaxNumofItems then begin
+      for i:=1 to kNumItemstoDelete do
+        Items.Delete(0);
+    end;
+
+  end;
+end; // debugMsg
+
+
+function ReverseDNSLookup( const IPAddress: String;
+                           const DNSServer: String;
+                           Timeout, Retries: Integer;
+                           var HostName: String): Boolean;
+var
+
+  RetryCount: Integer;
+  iResultCount, iLng : integer ;
+
+begin
+  Result := FALSE;
+
+
+
+  try
+
+
+    repeat
+
+      try
+
+        dec( RetryCount );
+
+        debugMsg ( '+++ call Resolver, IP ('+IPAddress+'), try ('+ IntToStr(RetryCount)+').' ) ;
+
+
+        Break;
+
+      except
+
+        on e: Exception do
+        begin
+
+          debugMsg ( '+++ Exception.' ) ;
+
+          if RetryCount <= 0 then
+          begin
+
+ //           if SameText(e.Message, RSCodeQueryName) then
+              Result := FALSE ;
+ //           else
+ //             raise Exception.Create(e.Message);
+
+            Break;
+          end;
+        end;
+      end;
+    until FALSE;
+
+    iResultCount := AIdDNSResolver.QueryResult.Count ;
+    debugMsg ( '+++ have ('+IntToStr(iResultCount)+') result(s).' ) ;
+    Result := AIdDNSResolver.QueryResult.Count > 0;
+
+    if Result then
+    begin
+      Result := TRUE;
+//      HostName := ParseReverseDNSResult( AIdDNSResolver.QueryResult[0].RData ) ;
+      iLng := AIdDNSResolver.QueryResult[0].RDataLength ;
+      debugMsg ( '+++ Result is of length ('+IntToStr(iLng)+').' ) ;
+
+    end;
+  finally
+    FreeAndNil( AIdDNSResolver );
+  end;
+end; // ReverseDNSLookup
+
+
+procedure TfDNS.btnDNSClick(Sender: TObject);
+var
+  bRC : boolean ;
+  szIP, szHostname : string ;
+
+begin
+
+  debugMsg ( '+++ do DNS lookup.' ) ;
+
+  szIP := edIP.Text ;
+  szHostname := '-' ;
+  edHN.Text := szHostname ;
+
+  bRC := ReverseDNSLookup( szIP, szDNS, iTO, iRetry, szHostname ) ;
+
+end;
+
+
+procedure TfDNS.MyInit(Sender: TObject);
+begin
+
+  edIP.Text := kszIP ;
+  debugMsg ( '+++ IP (' + edIP.Text + ').' ) ;
+
+end;
+
+end.
