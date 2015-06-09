@@ -41,7 +41,7 @@ object fDNS: TfDNS
   end
   object lbEV: TListBox
     Left = 24
-    Top = 216
+    Top = 221
     Width = 577
     Height = 361
     TabOrder = 3
@@ -53,5 +53,10 @@ object fDNS: TfDNS
     IPVersion = Id_IPv4
     Left = 512
     Top = 48
+  end
+  object timDNS: TTimer
+    OnTimer = timDNSTimeout
+    Left = 520
+    Top = 136
   end
 end

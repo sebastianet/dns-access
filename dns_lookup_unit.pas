@@ -1,6 +1,7 @@
 unit dns_lookup_unit;
 
-//  c:\Sebas\delphi\Ping_Continu>nslookup 91.126.241.136
+// Command Line :
+//  c:\Sebas\delphi\Ping_Continu> nslookup 91.126.241.136
 //  Server:  UnKnown
 //  Address:  192.168.1.1
 //
@@ -12,7 +13,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, IdBaseComponent, IdComponent,
-  IdTCPConnection, IdDNSResolver, Vcl.StdCtrls;
+  IdTCPConnection, IdDNSResolver, Vcl.StdCtrls, Vcl.ExtCtrls;
 
 const
     kszIP    = '91.126.241.136' ;
@@ -27,9 +28,11 @@ type
     edHN: TEdit;
     edIP: TEdit;
     lbEV: TListBox;
+    timDNS: TTimer;
     procedure MyInit(Sender: TObject);
 
     procedure btnDNSClick(Sender: TObject);
+    procedure timDNSTimeout(Sender: TObject);
 
   private
     { Private declarations }
@@ -72,6 +75,8 @@ begin
   end;
 end; // debugMsg
 
+
+// http://stackoverflow.com/questions/8277903/use-indy-to-perform-an-ipv6-reverse-dns-lookup
 
 procedure ReverseDNSLookup( const IPAddress: String;
                             const DNSServer: String;
@@ -162,7 +167,7 @@ begin
 end; // ReverseDNSLookup
 
 
-procedure TfDNS.btnDNSClick(Sender: TObject);
+procedure TfDNS.timDNSTimeout(Sender: TObject);
 var
   bRC : boolean ;
   szIP, szDNS, szHostname : string ;
@@ -181,8 +186,26 @@ begin
   edHN.Text := szHostname ;
 
   ReverseDNSLookup( szIP, szDNS, iTO, iRetry, szHostname ) ;
+  edHN.Text := szHostname ;
 
-end;
+end; // timDNSTimeout
+
+
+procedure TfDNS.btnDNSClick(Sender: TObject);
+begin
+
+  if timDNS.Enabled then
+  begin
+    timDNS.Enabled  := false ;
+    btnDNS.Caption  := 'Start DNS lookup' ;
+  end else
+  begin
+    timDNS.Interval := 1000 ;
+    timDNS.Enabled  := true ;
+    btnDNS.Caption  := 'Stop DNS lookup' ;
+  end;
+
+end; // btnDNSClick
 
 
 procedure TfDNS.MyInit(Sender: TObject);
@@ -191,6 +214,7 @@ begin
   edIP.Text := kszIP ;
   debugMsg ( '+++ IP (' + edIP.Text + ').' ) ;
 
-end;
+end; // MyInit
+
 
 end.
